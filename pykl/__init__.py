@@ -12,3 +12,11 @@
 __version__ = '0.1.1'
 
 import gdom
+
+import pyhtml
+
+import pyjson
+
+import pylext
+
+__all__ = ['gdom', 'pyhtml', 'pyjson', 'pylext']

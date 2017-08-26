@@ -24,22 +24,11 @@ SAMPLE_PAGE_QUERY_MAP = {
     }
   }
 }''',
-    'Baidu Search A example': '''{
-  page(url: "http://www.baidu.com/s?wd=A") {
-    items: query(selector: "div.c-container") {
-      title: text(selector: "h3 a")
-      url: attr(selector: "a", name: "href")
-      index: attr(selector: "", name: "id")
-      content: text(selector: "div.c-abstract")
-      cache: attr(selector: "div.f13 a.m", name: "href")
-    }
-  }
-}''',
 }
 
 SAMPLE_REDIS_QUERY_MAP = {
     'test': '''{
-  redis(uri: "redis://:f56f3c26ce7cee8F01e@121.40.128.45") {
+  redis(uri: "redis://:auth@127.0.0.1") {
     test_info_info: info {
       redis_version
       db0: db_info(db: "db0") {
