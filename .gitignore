@@ -101,6 +101,7 @@ ENV/
 .mypy_cache/
 
 install_local.bat
+upload_pypi.bat
 
 *.test.html
 *.test.json
