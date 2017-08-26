@@ -2,9 +2,8 @@ from setuptools import setup, find_packages
 
 setup(name='pykl',
       version='0.1.1',
-      download_url='git@github.com:wowngasb/pykl.git',
       packages=find_packages(),
-      author='Kong Lin',
+      author='pykl',
       author_email='me@wowngasb.com',
       description='kltool for python, toolset for web, http, cache, dht, xml, json and so on',
       long_description=open('README.rst').read(),
