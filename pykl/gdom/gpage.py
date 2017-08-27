@@ -126,7 +126,7 @@ class Node(graphene.Interface):
 
 
 def get_page(page):
-    return return pq(page, headers={'user-agent': 'gdom'})
+    return pq(page, headers={'user-agent': 'gdom'})
 
 
 class Document(graphene.ObjectType):
