@@ -24,6 +24,15 @@ SAMPLE_PAGE_QUERY_MAP = {
     }
   }
 }''',
+    'func_test': '''{
+  page(url: "http://www.kuaidaili.com/free/inha/") {
+    items: query(selector: "table.table-bordered.table-striped tbody tr") {
+      proxy: call(selector: "td", func:"lambda el: el[0].text() + ':' + el[1].text()"),
+    }
+  }
+}''',
+
+
 }
 
 SAMPLE_REDIS_QUERY_MAP = {

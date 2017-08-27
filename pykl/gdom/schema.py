@@ -31,8 +31,8 @@ schema = graphene.Schema(query=Query, types=[Element, RedisInfo, RedisDbInfo], a
 
 def main():
     import json
-    from cmd import SAMPLE_REDIS_QUERY_MAP
-    test = SAMPLE_REDIS_QUERY_MAP['test']
+    from cmd import SAMPLE_REDIS_QUERY_MAP, SAMPLE_PAGE_QUERY_MAP
+    test = SAMPLE_PAGE_QUERY_MAP['func_test']
     tmp = schema.execute(test)
     print 'data', json.dumps(tmp.data, indent=2)
     print 'errors', tmp.errors
