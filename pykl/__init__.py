@@ -9,7 +9,7 @@
     :license: MIT, see LICENSE for more details.
 """
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 import gdom
 
@@ -21,4 +21,8 @@ import pylext
 
 import pyhttp
 
-__all__ = ['gdom', 'pyhtml', 'pyjson', 'pylext', 'pyhttp']
+import pyfile
+
+import pyutils
+
+__all__ = ['gdom', 'pyhtml', 'pyjson', 'pylext', 'pyhttp', 'pyfile', 'pyutils']
