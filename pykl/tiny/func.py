@@ -106,17 +106,13 @@ def authcode(_string, operation, _key, _expiry, salt, rnd_length, chk_length):
     key = __php_md5(salt, _key, 'origin key')# 密匙
     keya = __php_md5(salt, key[:16], 'key a for crypt')# 密匙a会参与加解密
     keyb = __php_md5(salt, key[16:32], 'key b for check sum')# 密匙b会用来做数据完整性验证
-    keyc = '' if rnd_length <= 0 else (_string[:rnd_length] if operation == 'DECODE' else rand_str(rnd_length))# 密匙c用于变化生成的密文
-    checksum = __php_md5(salt, _string, keyb)[: 2 * chk_length]
-    expiry_at = _expiry + time_int if _expiry > 0 else 0
-    cryptkey = keya + __php_md5(salt, keya, keyc, 'merge key a and key c')# 参与运算的密匙
-    # 加密，原数据补充附加信息，共 8byte  前 4 Byte 用来保存时间戳，后 4 Byte 用来保存 checksum 解密时验证数据完整性
-    # 解码，会从第 rnd_length Byte开始，因为密文前 rnd_length Byte保存 动态密匙
-    string = safe_base64_decode(_string[rnd_length:]) if operation == 'DECODE' else ''.join([int32ToByteWithLittleEndian(expiry_at), __php_hex2bin(checksum), _string])
-
-    result = encodeByXor(string, cryptkey)
 
     if (operation == 'DECODE'):
+        keyc = '' if rnd_length <= 0 else _string[:rnd_length]  # 密匙c用于变化生成的密文
+        cryptkey = keya + __php_md5(salt, keya, keyc, 'merge key a and key c')# 参与运算的密匙
+        # 解码，会从第 rnd_length Byte开始，因为密文前 rnd_length Byte保存 动态密匙
+        string = safe_base64_decode(_string[rnd_length:])
+        result = encodeByXor(string, cryptkey)
         # 验证数据有效性
         result_len_ = len(result)
         expiry_at_ = byteToInt32WithLittleEndian(result[:4]) if result_len_ >= 4 else 0
@@ -124,11 +120,17 @@ def authcode(_string, operation, _key, _expiry, salt, rnd_length, chk_length):
         checksum_ = _php_bin2hex(result[4:pre_len]) if result_len_ >= pre_len else 0
         string_ = result[pre_len:] if result_len_ >= pre_len else ''
         tmp_sum = __php_md5(salt, string_, keyb)[: 2 * chk_length]
-        if (expiry_at_ == 0 or expiry_at_ > time_int) and checksum_ == tmp_sum:
-            return string_
-        else:
-            return ''
+        test_pass = (expiry_at_ == 0 or expiry_at_ > time_int) and checksum_ == tmp_sum
+        return string_ if test_pass else ''
     else:
+        keyc = '' if rnd_length <= 0 else rand_str(rnd_length) # 密匙c用于变化生成的密文
+        checksum = __php_md5(salt, _string, keyb)[: 2 * chk_length]
+        expiry_at = _expiry + time_int if _expiry > 0 else 0
+        cryptkey = keya + __php_md5(salt, keya, keyc, 'merge key a and key c')# 参与运算的密匙
+        # 加密，原数据补充附加信息，共 8byte  前 4 Byte 用来保存时间戳，后 4 Byte 用来保存 checksum 解密时验证数据完整性
+        # 解码，会从第 rnd_length Byte开始，因为密文前 rnd_length Byte保存 动态密匙
+        string = ''.join([int32ToByteWithLittleEndian(expiry_at), __php_hex2bin(checksum), _string])
+        result = encodeByXor(string, cryptkey)
         return keyc + safe_base64_encode(result)
 
 
@@ -160,15 +162,12 @@ def encodeByXor(string, cryptkey):
         box[a] = box[j]
         box[j] = tmp
         # 从密匙簿得出密匙进行异或，再转成字符
-        tmp_char = chr(ord(string[i]) ^ (box[(box[a] + box[j]) % 256]))
-        result_list.append( tmp_char )
-
+        tmp_idx = (box[a] + box[j]) % 256
+        tmp_char = chr(ord(string[i]) ^ box[tmp_idx])
+        result_list.append(tmp_char)
 
     result = ''.join(result_list)
     return result
-
-
-
 
 def main():
     import json
