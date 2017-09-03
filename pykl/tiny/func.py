@@ -66,7 +66,7 @@ def rand_str(length, tpl = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnop
     return ''.join([random.choice(tpl) for _ in range(length)]) if length > 0 else ''
 
 
-def encode(string, key, expiry = 0, salt = 'salt'):
+def encode(string, key, expiry = 0, salt = 'salt', rnd_length = 2, chk_length = 4):
     ''' 加密函数
     `param str string` 需要加密的字符串
     `param str key`
@@ -74,20 +74,20 @@ def encode(string, key, expiry = 0, salt = 'salt'):
     `param str salt`
     `return str` 加密结果 使用了 safe_base64_encode
     '''
-    return authcode(str(string), 'ENCODE', key, expiry, salt)
+    return authcode(str(string), 'ENCODE', key, expiry, salt, rnd_length, chk_length)
 
-def decode(string, key, salt = 'salt'):
+def decode(string, key, salt = 'salt', rnd_length = 2, chk_length = 4):
     ''' 解密函数  成功返回原字符串  失败或过期 返回 空字符串
     `param str string` 需解密的 字符串 safe_base64_encode 格式编码
     `param str key`
     `param str salt`
     `return str` 解密结果
     '''
-    return authcode(str(string), 'DECODE', key, 0, salt)
+    return authcode(str(string), 'DECODE', key, 0, salt, rnd_length, chk_length)
 
 
 
-def authcode(_string, operation, _key, _expiry = 0, salt = '', rnd_length = 2, chk_length = 4):
+def authcode(_string, operation, _key, _expiry, salt, rnd_length, chk_length):
     ''' 加解密函数
     `param str string`
     `param str operation`
