@@ -1,4 +1,4 @@
-import func import
+import func
 
 
 __all__ = ['func']

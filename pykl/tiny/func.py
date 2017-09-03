@@ -12,10 +12,13 @@ def __php_md5(*str_args):
     return m2.hexdigest()
 
 def __php_base64_encode(strin):
-    return base64.encodestring(strin)
+    return base64.encodestring(strin).strip()
 
 def __php_base64_decode(strin):
-    return base64.decodestring(strin)
+    try:
+        return base64.decodestring(strin)
+    except Exception:
+        return ''
 
 def _php_bin2hex(byte):
     return binascii.b2a_hex(byte)

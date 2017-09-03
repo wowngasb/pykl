@@ -25,4 +25,6 @@ import pyfile
 
 import pyutils
 
-__all__ = ['gdom', 'pyhtml', 'pyjson', 'pylext', 'pyhttp', 'pyfile', 'pyutils']
+import tiny
+
+__all__ = ['gdom', 'pyhtml', 'pyjson', 'pylext', 'pyhttp', 'pyfile', 'pyutils', 'tiny']
