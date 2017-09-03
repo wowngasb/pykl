@@ -32,7 +32,8 @@ class Node(graphene.Interface):
                            name='is', selector=graphene.String(required=True))
     query = graphene.List(lambda: Element,
                           description='Find elements using selector traversing down from self',
-                          selector=graphene.String(required=True))
+                          selector=graphene.String(required=True),
+                          filter=graphene.String())
     children = graphene.List(lambda: Element,
                              description='The list of children elements from self',
                              selector=graphene.String())
@@ -84,7 +85,10 @@ class Node(graphene.Interface):
         return _query_selector(self, args).attr(attr)
 
     def resolve_query(self, args, context, info):
-        return _query_selector(self, args).items()
+        filter = eval(args.get('filter', '')) if args.get('filter', '') else None
+        return [i for i in _query_selector(self, args).items() if filter(i)] \
+                    if filter else \
+                        _query_selector(self, args).items()
 
     def resolve_children(self, args, context, info):
         selector = args.get('selector')
