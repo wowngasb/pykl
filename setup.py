@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pykl',
-      version='0.1.3',
+      version='0.1.4',
       packages=find_packages(),
       author='pykl',
       author_email='me@wowngasb.com',
@@ -14,7 +14,10 @@ setup(name='pykl',
           'graphene>=1.0',
           'flask-graphql>=1.2.0',
           'pyquery>=1.2.11',
-          'requests>=2.9.1'
+          'requests>=2.9.1',
+          'SQLAlchemy==1.1.13',
+          'six',
+          'singledispatch'
       ],
       tests_require=[
       ])
