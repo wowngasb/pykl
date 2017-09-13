@@ -29,7 +29,7 @@ _re_invalid_identifier = re.compile(r'[^a-zA-Z0-9_]' if sys.version_info[0] < 3 
 
 
 
-def get_col_doc(engine, metadata):
+def get_col_doc(engine):
     stricmp = lambda s1, s2: s1.lower()==s2.lower()
     db_name = engine.url.database
     tbl_rst = engine.execute('show table status')
@@ -59,7 +59,7 @@ def get_col_doc(engine, metadata):
         })
         return ret
 
-    for table in metadata.tables.values():
+    for table in db_comments_map.keys():
         sql_str = 'show full columns from %s.%s' % (db_name, table.name)
         tmp_rst = engine.execute(sql_str)
         db_comments_map.setdefault(table.name, {})

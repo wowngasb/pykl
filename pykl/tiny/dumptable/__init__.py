@@ -43,5 +43,5 @@ def cmd_main():
     generator = CodeGenerator(metadata, args.noindexes, args.noconstraints, args.nojoined, args.noinflect,
                               args.noclasses)
 
-    db_comments_map = {} if args.nocomments else get_col_doc(engine, metadata)
+    db_comments_map = {} if args.nocomments else get_col_doc(engine)
     generator.render(outfile, db_comments_map)
