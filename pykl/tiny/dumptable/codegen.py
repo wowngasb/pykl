@@ -60,10 +60,10 @@ def get_col_doc(engine):
         return ret
 
     for table in db_comments_map.keys():
-        sql_str = 'show full columns from %s.%s' % (db_name, table.name)
+        sql_str = 'show full columns from %s.%s' % (db_name, table)
         tmp_rst = engine.execute(sql_str)
-        db_comments_map.setdefault(table.name, {})
-        db_comments_map[table.name].update({
+        db_comments_map.setdefault(table, {})
+        db_comments_map[table].update({
             'Columns': {col['Field']: _col_doc(col) for col in tmp_rst},
         })
     return db_comments_map
