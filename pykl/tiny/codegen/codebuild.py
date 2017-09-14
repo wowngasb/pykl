@@ -171,12 +171,20 @@ class BuildPHP(Build):
 
         merge_default(options, self.default_options)
         for tag in ('dao', 'dao_', 'graphql'):
+            tmp_dict = dict(self.default_options[tag])
+            tmp_dict.update(options[tag])
+            options[tag] = tmp_dict
             options[tag].setdefault('path', '')
+
             options[tag]['path'] = path_join([p for p in (options['path'], options[tag]['path']) if p])
             merge_default(options[tag], options, lambda k,v: not isinstance(v, dict))
 
         for tag in ('enum', 'type', 'exttype', 'abstracttype', 'union', 'query', 'types'):
+            tmp_dict = dict(self.default_options['graphql'][tag])
+            tmp_dict.update(options['graphql'][tag])
+            options['graphql'][tag] = tmp_dict
             options['graphql'][tag].setdefault('path', '')
+
             options['graphql'][tag]['path'] = path_join([p for p in (options['graphql']['path'], options['graphql'][tag]['path']) if p])
             merge_default(options['graphql'][tag], options['graphql'], lambda k,v: not isinstance(v, dict))
 
