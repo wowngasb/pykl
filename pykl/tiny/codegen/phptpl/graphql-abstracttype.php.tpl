@@ -44,6 +44,26 @@ abstract class {{ classname }} extends {{ _classname }}
      * @return mixed {{ f_type.name }}
      */
     abstract public function {{ f_name }}($rootValue, $args, $context, ResolveInfo $info);
+
+{%- macro render_type_func(_type) -%}
+    {{ _type.name if _type.name else _type.__class__ }}
+{%- endmacro -%}
+
+{%- macro render_type_default(_type) -%}
+    {{ _type.name if _type.name else _type.__class__ }}
+{%- endmacro -%}
+
+    {%- if f_args %}
+    /**
+    
+    {%- for a_key, a_val in f_args.items() %}
+    {%- set a_type, a_attach, a_has_default, a_is_simple_type = options._this.typeFromArgument(a_val) %}
+    ${{ a_key }} = isset($args['{{ a_key }}']) ? {{ options._this.buildValueByType(a_type.name, "$args['" + a_key + "']") }} : {{ json.dumps(a_val.default_value, ensure_ascii=Flase) if a_has_default else options._this.buildDefaultByType(a_type.name) }};    //  {{ a_type.name }}  {{ a_val.description }} {{ '(' + ','.join(a_attach) + ')' if a_attach else '' }}
+    {%- endfor %}
+    
+     */
+    {%- endif %}
+    
     {%- endif %}
     {%- endfor %}
     

@@ -6,6 +6,8 @@ from inspect import isfunction, ismethod, isclass
 import six
 from sqlalchemy.inspection import inspect as sqlalchemyinspect
 
+from sqlalchemy import Column
+
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 import graphene
@@ -23,6 +25,7 @@ from .utils import (
     get_query,
     is_mapped,
     BitMask,
+    SortableField,
     HiddenField,
     InitializeField,
     EditableField,
@@ -41,6 +44,43 @@ class Field(graphene.Field):
     def __init__(self, cls, *args, **kwargs):
         super(Field, self).__init__(BuildType(cls), *args, **kwargs)
 
+def BuildArgument(cls, get_info = True, registry=None, **ext_fields):
+    if not registry:
+        registry = get_global_registry()
+    assert isinstance(registry, Registry), (
+        'The attribute registry in {}.Meta needs to be an'
+        ' instance of Registry, received "{}".'
+    ).format(name, registry)
+
+    info = getattr(cls, 'info', None) if get_info else None
+    if isinstance(info, InstrumentedAttribute):
+        info = getattr(cls, '_info', None) if get_info else None
+
+    if isinstance(info, BitMask):
+        info = getattr(info, '_info', None)
+
+    doc_str = getattr(cls, 'doc', None) if is_column(cls) else getattr(cls, '__doc__', None)
+
+    if not info and is_column(cls):
+        converted_type, converted_args = convert_sqlalchemy_column(cls, registry)
+        converted_args['required'] = False
+        return graphene.Argument(converted_type, **converted_args)
+
+    if ismethod(info):
+        cls.info = cls.info()
+        return graphene.Argument(cls.info, description=doc_str)
+    elif _is_graphql(info):
+        return graphene.Argument(info, description=doc_str)
+    elif _is_graphql(cls):
+        return graphene.Argument(cls, description=doc_str)
+    elif isfunction(cls):
+        def _type():
+            return graphene.Argument(cls(), description=doc_str)
+        return _type
+
+    else:
+        raise ValueError('cannot buid_type with %r -> %r' % (cls, info))
+
 def construct_fields(options):
     exclude_fields = set(options.exclude_fields)
     inspected_model = sqlalchemyinspect(options.model)
@@ -52,8 +92,7 @@ def construct_fields(options):
         if isinstance(info, BitMask):
             if info.has(HiddenField):
                 exclude_fields.add(name)
-            else:
-                info = info._info
+            info = getattr(info, '_info', None)
 
         if _is_graphql(info):
             if hasattr(info, '_meta') and not getattr(info._meta, 'description', None):
@@ -65,7 +104,8 @@ def construct_fields(options):
     for name, column in inspected_model.columns.items():
         if name in exclude_fields or name in options.fields:
             continue
-        converted_column = convert_sqlalchemy_column(column, options.registry)
+        converted_type, converted_args = convert_sqlalchemy_column(column, options.registry)
+        converted_column = converted_type(**converted_args)
         fields[name] = converted_column
 
     return fields
@@ -140,14 +180,13 @@ class SQLAlchemyObjectType(six.with_metaclass(SQLAlchemyObjectTypeMeta, graphene
         model = cls._meta.model
         return get_query(model, context)
 
-
 def BuildType(cls, get_info = True, base_type=SQLAlchemyObjectType, **ext_fields):
     info = getattr(cls, 'info', None) if get_info else None
     if isinstance(info, InstrumentedAttribute):
         info = getattr(cls, '_info', None) if get_info else None
 
-    if isinstance(info, BitMask) and info.has(HiddenField):
-        raise ValueError('cannot buid_type with HiddenField of %r -> %r' % (cls, info))
+    if isinstance(info, BitMask):
+        info = getattr(info, '_info', None)
 
     if not info and is_mapped(cls):
         class Meta:
@@ -171,8 +210,12 @@ def BuildType(cls, get_info = True, base_type=SQLAlchemyObjectType, **ext_fields
         def _type():
             return BuildType(cls())
         return _type
+
     else:
         raise ValueError('cannot buid_type with %r -> %r' % (cls, info))
 
+
+is_column = lambda cls: isinstance(cls, Column)
 _is_graphql = lambda cls: isclass(cls) and issubclass(cls, (graphene.Union, graphene.Enum, graphene.Field, graphene.List, graphene.NonNull, graphene.AbstractType, graphene.Interface, graphene.InputObjectType, graphene.ObjectType, graphene.Scalar))
 _is_graphql_cls = lambda cls, skip_set=set((graphene.Field, graphene.List, graphene.NonNull, Field, List, NonNull, SQLAlchemyObjectType)): _is_graphql(cls) and cls not in skip_set
+_is_graphql_mutation = lambda cls: isclass(cls) and issubclass(cls, graphene.Mutation)

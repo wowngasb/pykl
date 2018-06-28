@@ -20,6 +20,15 @@ use GraphQL\Type\Definition\EnumType;
 class {{ classname }} extends EnumType
 {
 
+    {%- for name, value in enum._name_lookup.items() %}
+    const {{ name }}_ENUM = {{ json.dumps(name, ensure_ascii=Flase) }};
+    const {{ name }}_VALUE = {{ json.dumps(value.value, ensure_ascii=Flase) }};
+    {%- endfor %}
+
+    const ALL_ENUM_TYPE = {{ json.dumps(enum._name_lookup.keys(), ensure_ascii=Flase) }};
+    const ALL_ENUM_VALUE = {{ json.dumps(map_value(enum._name_lookup.values()), ensure_ascii=Flase) }};
+    const ALL_ENUM_MAP = {{ php_dict(map_enum(enum._name_lookup)) }};
+        
     public function __construct(array $_config = [])
     {
         $config = [

@@ -22,6 +22,9 @@ def convert_sqlalchemy_column(column, registry=None):
     return convert_sqlalchemy_type(getattr(column, 'type', None), column, registry)
 
 
+def get_column_args(column):
+    return dict(description=get_column_doc(column), required=not (is_column_nullable(column)))
+
 @singledispatch
 def convert_sqlalchemy_type(type, column, registry=None):
     raise Exception(
@@ -39,7 +42,7 @@ def convert_sqlalchemy_type(type, column, registry=None):
 @convert_sqlalchemy_type.register(postgresql.ENUM)
 @convert_sqlalchemy_type.register(postgresql.UUID)
 def convert_column_to_string(type, column, registry=None):
-    return String(description=get_column_doc(column),
+    return String, dict(description=get_column_doc(column),
                   required=not(is_column_nullable(column)))
 
 
@@ -47,19 +50,18 @@ def convert_column_to_string(type, column, registry=None):
 @convert_sqlalchemy_type.register(types.Integer)
 def convert_column_to_int_or_id(type, column, registry=None):
     if column.primary_key:
-        return ID(description=get_column_doc(column), required=not (is_column_nullable(column)))
+        return Int, get_column_args(column)
     else:
-        return Int(description=get_column_doc(column),
-                   required=not (is_column_nullable(column)))
+        return Int, get_column_args(column)
 
 
 @convert_sqlalchemy_type.register(types.Boolean)
 def convert_column_to_boolean(type, column, registry=None):
-    return Boolean(description=get_column_doc(column), required=not(is_column_nullable(column)))
+    return Boolean, get_column_args(column)
 
 
 @convert_sqlalchemy_type.register(types.Float)
 @convert_sqlalchemy_type.register(types.Numeric)
 @convert_sqlalchemy_type.register(types.BigInteger)
 def convert_column_to_float(type, column, registry=None):
-    return Float(description=get_column_doc(column), required=not(is_column_nullable(column)))
+    return Float, get_column_args(column)

@@ -88,9 +88,9 @@ class {{ classname }} extends ObjectType
         parent::__construct($config);
     }
     
-    public function hello()
+    public function hello($value, $args, $context, ResolveInfo $info)
     {
-        return 'Your graphql-php endpoint is ready! Use GraphiQL to browse API';
+        return "Hello {$args['name']}, Your graphql-php endpoint is ready! Use GraphiQL to browse API";
     }
 
     public function deprecatedField()

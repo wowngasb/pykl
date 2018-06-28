@@ -69,10 +69,31 @@ class {{ classname }}
     }
 
     ####################################
+    ##########  abstract types  ##########
+    ####################################
+    
+    {%- for t, v in abstract_types.items() %}
+
+    private static $_m{{ t }} = null;
+
+    /**
+     * {{ class_map[ t ][1].description if class_map[ t ][1].description else t }}
+     * @param array $config
+     * @param mixed $type
+     * @return {{ t }}
+     */
+    public static function {{ t }}(array $config = [], $type = null)
+    {
+        return self::$_m{{ t }} ?: (self::$_m{{ t }} = new {{ t }}($config, $type));
+    }
+
+    {%- endfor %}
+
+    ####################################
     ##########  table types  ##########
     ####################################
     
-    {%- for t, v in types.items() %}
+    {%- for t, v in table_types.items() %}
 
     private static $_m{{ t }} = null;
 
@@ -122,7 +143,6 @@ class {{ classname }}
     /**
      * {{ class_map[ t ][1].description if class_map[ t ][1].description else t }}
      * @param array $config
-     * @param mixed $type
      * @return {{ t }}
      */
     public static function {{ t }}(array $config = [])

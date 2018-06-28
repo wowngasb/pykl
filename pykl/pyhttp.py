@@ -1,12 +1,7 @@
 #-*- coding: utf-8 -*-
-try:
-    from gevent import monkey
-    monkey.patch_all()
-    from gevent.pool import Pool
-    USE_GEVENT = True
-except ImportError:
-    USE_GEVENT = False
-    
+from gevent import monkey
+monkey.patch_all()
+from gevent.pool import Pool
 import urllib2
 import httplib
 import socket
@@ -142,7 +137,7 @@ class MultiHttpDownLoad(object):
     )
 
     def __init__(self, spawn_num, error_max=5, http_time_out=HTTP_TIME_OUT, get_proxy=None, logger=None):
-        self.spawn_num = int(spawn_num) if USE_GEVENT else 1
+        self.spawn_num = int(spawn_num)
         self.error_max = int(error_max)
         self.http_time_out = int(http_time_out)
         self.get_proxy = get_proxy
