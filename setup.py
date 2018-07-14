@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pykl',
-      version='0.1.5',
+      version='0.1.6',
       packages=find_packages(),
       author='pykl',
       author_email='me@wowngasb.com',
