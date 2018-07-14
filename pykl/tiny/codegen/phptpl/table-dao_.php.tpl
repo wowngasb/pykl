@@ -9,7 +9,7 @@
 namespace {{ namespace }};
 
 use {{ options.base_namespace }};
-use Tiny\Application;
+use app\App;
 use Tiny\OrmQuery\OrmConfig;
 
 
@@ -35,7 +35,7 @@ class {{ classname }} extends {{ options.base_cls }}
     {
         $class_name = get_called_class();
         if (!isset(static::$_orm_config_map[$class_name])) {
-            $db_config = Application::get_config('ENV_DB');
+            $db_config = App::config('ENV_DB');
             $db_name = !empty($db_config['database']) ? $db_config['database'] : 'test';
             static::$_orm_config_map[$class_name] = new OrmConfig($db_name, '{{ table.class_.__tablename__ }}', '{{ table.primary_key[0].name }}', static::$cache_time, static::$max_select, static::$debug);
         }

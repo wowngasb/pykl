@@ -11,13 +11,14 @@ setup(name='pykl',
       url='http://github.com/wowngasb/pykl',
       license='MIT',
       install_requires=[
-          'graphene>=1.0',
-          'flask-graphql>=1.2.0',
-          'pyquery>=1.2.11',
-          'requests>=2.9.1',
-          'SQLAlchemy>=1.1.13',
-          'six',
-          'singledispatch'
+		'graphql-core==1.1',
+		'graphene==1.4',
+		'flask-graphql>=1.2.0',
+		'pyquery==1.2.11',
+		'requests==2.9.1',
+		'SQLAlchemy==1.1.15',
+		'six',
+		'singledispatch'
       ],
       tests_require=[
       ])
