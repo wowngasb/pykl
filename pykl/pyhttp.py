@@ -213,7 +213,7 @@ class MultiHttpDownLoad(object):
     def _get_url(self, url, use_gzip=True, proxy_info=None):
         if not url:
             return '', {}, None
-        headers, data = get_url(url, use_gzip=True, proxy_info=None, timeout=HTTP_TIME_OUT, add_header=ADD_HEADER, random_agent=True)
+        headers, data = get_url(url, use_gzip=use_gzip, proxy_info=proxy_info, timeout=HTTP_TIME_OUT, add_header=ADD_HEADER, random_agent=True)
         return data, dict(headers), proxy_info
 
 
