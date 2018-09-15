@@ -13,6 +13,8 @@ __version__ = '0.1.3'
 
 import gdom
 
+import kit
+
 import pyhtml
 
 import pyjson
@@ -27,4 +29,4 @@ import pyutils
 
 import tiny
 
-__all__ = ['gdom', 'pyhtml', 'pyjson', 'pylext', 'pyhttp', 'pyfile', 'pyutils', 'tiny']
+__all__ = ['gdom', 'kit', 'pyhtml', 'pyjson', 'pylext', 'pyhttp', 'pyfile', 'pyutils', 'tiny']
