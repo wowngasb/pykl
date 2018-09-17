@@ -24,10 +24,15 @@ def read_file(base, obj, seq="\n"):
         else:
             return seq.join([first_line] + rf.readlines()).strip()
 
+
 def load_hash(base, h):
     h_file = os.path.join(base, 'objects', h[:2], h[2:])
+    if not os.path.isfile(h_file):
+        return ''
+
     with open(h_file, 'rb') as rf:
         return zlib.decompress(rf.read())
+
 
 def index_view():
     head = read_file(app.git_path, 'HEAD')
