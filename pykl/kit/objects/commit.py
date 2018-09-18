@@ -4,19 +4,12 @@
 # This module is part of GitPython and is released under
 # the BSD License: http://www.opensource.org/licenses/bsd-license.php
 
-from gitdb import IStream
-from git.util import (
+
+from .util import (
     hex_to_bin,
     Actor,
     Iterable,
     Stats,
-    finalize_process
-)
-from git.diff import Diffable
-
-from .tree import Tree
-from . import base
-from .util import (
     Traversable,
     Serializable,
     parse_date,
@@ -24,7 +17,6 @@ from .util import (
     parse_actor_and_date,
     from_timestamp,
 )
-from git.compat import text_type
 
 from time import (
     time,
@@ -437,7 +429,7 @@ class Commit(base.Object, Iterable, Diffable, Traversable, Serializable):
         write(b"\n")
 
         # write plain bytes, be sure its encoded according to our encoding
-        if isinstance(self.message, text_type):
+        if isinstance(self.message, unicode):
             write(self.message.encode(self.encoding))
         else:
             write(self.message)
