@@ -64,6 +64,23 @@ class Repo(Base):
             def resolve_heads(self, args, context, info):
                 return [Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path) for ref in context._repo.heads]
 
+            master = Field(lambda :Ref, description=u'master 引用')
+            def resolve_master(self, args, context, info):
+                args['name'] = 'master'
+                return self.info.resolve_head(Repo(self), args, context, info)
+
+            tag = Field(lambda :Ref, description=u'查找 tag',
+                name=g.Argument(g.String, description=u'input you tag')
+            )
+            def resolve_tag(self, args, context, info):
+                name = args.get('name', 'master')
+                ref = context._repo.tags[name]
+                return Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path)
+
+            tags = List(lambda :Ref, description=u'tag')
+            def resolve_tags(self, args, context, info):
+                return [Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path) for ref in context._repo.tags]
+
         return Repo
 
 def date(format_='%Y-%m-%d %H:%M:%S', time_=None):
