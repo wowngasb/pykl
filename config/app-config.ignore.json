@@ -23,13 +23,13 @@
         "type": "files"
     },
     "ENV_DB": {
-        "username": "devws",
+        "username": "root",
         "database": "kit_git",
         "charset": "utf8",
         "driver": "mysql",
-        "host": "47.97.25.236",
+        "host": "127.0.0.1",
         "collation": "utf8mb4_unicode_ci",
-        "password": "07upQDmPEh&VLI#0",
+        "password": "new_pass",
         "port": 3306
     },
     "app": {

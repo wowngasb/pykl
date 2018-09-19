@@ -5,7 +5,7 @@ import json
 import sys
 import os
 import zlib
-from pygit2 import Repository
+from git import Repo
 
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -15,9 +15,12 @@ import graphql
 from flask_graphql import GraphQLView
 
 app = Flask(__name__)
+app.config.from_object('config')
 db = SQLAlchemy(app)
 
 import models
+
+# from git import Repo; repo_path = r"D:\GitHub\pykl"; repo = Repo(repo_path); repo
 
 def read_file(base, obj, seq="\n"):
     obj_file = os.path.join(base, obj)
@@ -42,14 +45,13 @@ def load_hash(base, h):
         return zlib.decompress(rf.read())
 
 
-def get_test_app(git_path, config=None):
+def get_test_app(git_path):
     if not os.path.isdir(git_path):
         raise ValueError('not dir:%s' % (git_path, ))
 
-    app.config.setdefault('GIT_PATH', git_path)
-
-    if config:
-        app.config.from_object(config)
+    repo_path = os.path.basename(git_path)
+    app.config.setdefault('REPO_PATH', repo_path)
+    app.config.setdefault('REPO', Repo(repo_path))
 
     return app
 
@@ -60,7 +62,9 @@ def index():
 
 @app.route('/test')
 def test():
-    return 'test'
+    repo = app.config.get('REPO')
+
+    return help(repo)
 
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view('graphql', schema=models.schema, graphiql=True))
 
@@ -90,19 +94,29 @@ GRAPHIQL_HTML = '''
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html, body {
-      height: 100%;
+    body {
+      height: 100vh;
       margin: 0;
       overflow: hidden;
-      width: 100%;
+    }
+    #splash {
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      font-family: system, -apple-system, "San Francisco", ".SFNSDisplay-Regular", "Segoe UI", Segoe, "Segoe WP", "Helvetica Neue", helvetica, "Lucida Grande", arial, sans-serif;
+      height: 100vh;
+      justify-content: center;
+      text-align: center;
     }
   </style>
-  <link href="http://cdn.jsdelivr.net/graphiql/0.7.1/graphiql.css" rel="stylesheet" />
-  <script src="http://cdn.jsdelivr.net/fetch/0.9.0/fetch.min.js"></script>
-  <script src="http://cdn.jsdelivr.net/react/15.0.0/react.min.js"></script>
-  <script src="http://cdn.jsdelivr.net/react/15.0.0/react-dom.min.js"></script>
-  <script src="http://cdn.jsdelivr.net/graphiql/0.7.1/graphiql.min.js"></script>
+  <link href="//cdn.jsdelivr.net/npm/graphiql@0.11.11/graphiql.css" rel="stylesheet" />
+  <script src="//cdn.jsdelivr.net/es6-promise/4.0.5/es6-promise.auto.min.js"></script>
+  <script src="//cdn.jsdelivr.net/react/15.4.2/react.min.js"></script>
+  <script src="//cdn.jsdelivr.net/react/15.4.2/react-dom.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/graphiql@0.11.11/graphiql.min.js"></script>
 </head>
 <body>
   <script>

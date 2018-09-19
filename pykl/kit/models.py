@@ -32,6 +32,44 @@ class MigrateVersion(Base):
     repository_path = Column(Text, doc=u"""field repository_path""", info=CustomField | SortableField)
     version = Column(Integer, doc=u"""field version""", info=CustomField | SortableField)
 
+class Ref(Base):
+    u"""table kit_ref"""
+    __tablename__ = 'kit_ref'
+    ref_id = Column(Integer, primary_key=True, doc=u"""对应 repo_id""", info=SortableField | InitializeField)
+    ref_path = Column(String(191), primary_key=True, doc=u"""field repo_path""", info=CustomField | SortableField)
+    ref_name = Column(String(191), primary_key=True, doc=u"""field repo_path""", info=CustomField | SortableField)
+
+class Repo(Base):
+    u"""table kit_repo"""
+    __tablename__ = 'kit_repo'
+
+    repo_id = Column(Integer, primary_key=True, doc=u"""对应 repo_id""", info=SortableField | InitializeField)
+    repo_path = Column(String(191), primary_key=True, doc=u"""field repo_path""", info=CustomField | SortableField)
+
+    @classmethod
+    def info(cls):
+        class Repo(SQLAlchemyObjectType):
+            class Meta:
+                model = cls
+
+            head = Field(lambda :Ref, description=u'查找 引用',
+                name=g.Argument(g.String, default_value="master", description=u'input you name')
+            )
+            def resolve_head(self, args, context, info):
+                name = args.get('name', 'master')
+                ref = context._repo.heads[name]
+                return Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path)
+
+            heads = List(lambda :Ref, description=u'引用')
+            def resolve_heads(self, args, context, info):
+                return [Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path) for ref in context._repo.heads]
+
+        return Repo
+
+def date(format_='%Y-%m-%d %H:%M:%S', time_=None):
+    timestamp = time.time() if time_ is None else int(time_)
+    timestruct = time.localtime(timestamp)
+    return time.strftime(format_, timestruct)
 
 ##############################################################
 ###################		根查询 Query		######################
@@ -42,7 +80,25 @@ class Query(g.ObjectType):
     deprecatedField = Field(g.String, deprecation_reason = 'This field is deprecated!')
     fieldWithException = g.String()
     migrateVersion = Field(MigrateVersion, description=u'migrate_version')
-    
+
+    repo = Field(Repo, description=u'load repo by path',
+        repo_path=g.Argument(g.String, description=u'input repo path'),
+    )
+    def resolve_repo(self, args, context, info):
+        repo_path = args.get('repo_path', '')
+        context._repo = None
+        return Repo.query.filter_by(repo_path = repo_path).first()
+
+    curRepo = Field(Repo, description=u'this repo')
+    def resolve_curRepo(self, args, context, info):
+        repo = app.config.get('REPO')
+        if repo:
+            context._repo = repo
+            return Repo(
+                repo_id=0,
+                repo_path=repo.working_dir
+            )
+
     def resolve_hello(self, args, context, info):
         return 'Hello, %s!' % (args.get('name', ''), )
 
@@ -54,7 +110,7 @@ class Query(g.ObjectType):
 
     def resolve_migrateVersion(self, args, context, info):
         return MigrateVersion.query.first()
-        
+
 ##############################################################
 ###################		 Mutations		######################
 ##############################################################

@@ -41,6 +41,7 @@ from sqlalchemy import (
     TIMESTAMP,
 )
 
+StateEnum = g.Enum('StateEnum', upper_tuple({'unknown': 0, 'normal': 1, 'frozen': 2, 'notdel': 3, 'deleted': 4, 'expired': 8, 'reserve': 16}), description=u'通用状态类型 0:未知(用于检索所有) UNKNOWN,  1:正常 NORMAL,  2:冻结 FROZEN,  3:非删除 NOTDEL,  4:删除 DELETED,  8:过期 EXPIRED,  16:备用 RESERVE')
 
 SortDirectionEnum = g.Enum('SortDirectionEnum', upper_tuple(['asc', 'desc']), description=u'排序方向 asc:升序 ASC, desc:降序 DESC')
 
