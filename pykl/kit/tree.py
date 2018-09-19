@@ -1,8 +1,5 @@
-# tree.py
-# Copyright (C) 2008, 2009 Michael Trier (mtrier@gmail.com) and contributors
-#
-# This module is part of GitPython and is released under
-# the BSD License: http://www.opensource.org/licenses/bsd-license.php
+# -*- coding: UTF-8 -*-
+
 from git.util import join_path
 import git.diff as diff
 from git.util import to_bin_sha

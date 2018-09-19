@@ -1,18 +1,9 @@
-# objects.py
-# Copyright (C) 2008, 2009 Michael Trier (mtrier@gmail.com) and contributors
-#
-# This module is part of GitPython and is released under
-# the BSD License: http://www.opensource.org/licenses/bsd-license.php
-""" Module containing all object based types. """
-from . import base
-from .util import get_object_type_by_name, parse_actor_and_date
-from ..util import hex_to_bin
-from ..compat import defenc
-
-__all__ = ("TagObject", )
+# -*- coding: UTF-8 -*-
 
 
-class TagObject(base.Object):
+from util import get_object_type_by_name, parse_actor_and_date, hex_to_bin, Object
+
+class TagObject(Object):
 
     """Non-Lightweight tag carrying additional information about an object we are pointing to."""
     type = "tag"

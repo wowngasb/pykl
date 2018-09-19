@@ -5,7 +5,7 @@
 # the BSD License: http://www.opensource.org/licenses/bsd-license.php
 
 
-from .util import (
+from util import (
     hex_to_bin,
     Actor,
     Iterable,
@@ -32,10 +32,9 @@ import logging
 log = logging.getLogger('git.objects.commit')
 log.addHandler(logging.NullHandler())
 
-__all__ = ('Commit', )
 
 
-class Commit(base.Object, Iterable, Diffable, Traversable, Serializable):
+class Commit(Object, Iterable, Diffable, Traversable, Serializable):
 
     """Wraps a git Commit object.
 
