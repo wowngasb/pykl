@@ -1,0 +1,43 @@
+{
+    "ENV_REDIS": {
+        "host": "127.0.0.1",
+        "password": "password",
+        "port": 6379,
+        "database": 0
+    },
+    "ENV_LOG": {
+        "path": "X:\\xxx\\logs\\",
+        "level": "DEBUG"
+    },
+    "ENV_WEB": {
+        "slug": "xxx",
+        "ver": "1.00",
+        "name": "xxx",
+        "cdn": "",
+        "devsrv": "http://xxx.test"
+    },
+    "ENV_CACHE": {
+        "config": {
+            "path": "X:\\xxx\\cache\\"
+        },
+        "type": "files"
+    },
+    "ENV_DB": {
+        "username": "username",
+        "database": "database",
+        "charset": "utf8",
+        "driver": "mysql",
+        "host": "127.0.0.1",
+        "collation": "utf8_general_ci",
+        "password": "password",
+        "port": 3306
+    },
+    "app": {
+        "dev_srv": "http://www.xxx.com"
+    },
+    "ROOT_PATH": "X:\\xxx\\",
+    "ENV_DEVELOP_KEY": "env_develop_key",
+    "CACHE_PATH": "X:\\xxx\\cache\\",
+    "ENVIRON": "debug",
+    "ENV_CRYPT_KEY": "env_crypt_key"
+}

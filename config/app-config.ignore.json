@@ -1,0 +1,43 @@
+{
+    "ENV_REDIS": {
+        "host": "47.97.25.236",
+        "password": "wstest",
+        "port": 6378,
+        "database": 0
+    },
+    "ENV_LOG": {
+        "path": "D:\\GitHub\\pykl\\logs\\",
+        "level": "DEBUG"
+    },
+    "ENV_WEB": {
+        "slug": "xxx",
+        "ver": "1.00",
+        "name": "xxx",
+        "cdn": "",
+        "devsrv": "http://kit.test:5000"
+    },
+    "ENV_CACHE": {
+        "config": {
+            "path": "D:\\GitHub\\pykl\\cache\\"
+        },
+        "type": "files"
+    },
+    "ENV_DB": {
+        "username": "devws",
+        "database": "kit_git",
+        "charset": "utf8",
+        "driver": "mysql",
+        "host": "47.97.25.236",
+        "collation": "utf8mb4_unicode_ci",
+        "password": "07upQDmPEh&VLI#0",
+        "port": 3306
+    },
+    "app": {
+        "dev_srv": "http://www.kit.com"
+    },
+    "ROOT_PATH": "D:\\GitHub\\pykl\\",
+    "ENV_DEVELOP_KEY": "sdaw34324xdf",
+    "CACHE_PATH": "D:\\GitHub\\pykl\\cache\\",
+    "ENVIRON": "debug",
+    "ENV_CRYPT_KEY": "xxxxxxxxxxx"
+}

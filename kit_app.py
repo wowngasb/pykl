@@ -3,7 +3,7 @@
 import os
 from pykl import kit
 
-app = kit.get_test_app(git_path=os.path.join(os.getcwd(), '.git'))
+app = kit.get_test_app(git_path=os.path.join(os.getcwd(), '.git'), 'config')
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
