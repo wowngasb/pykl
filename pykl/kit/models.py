@@ -4,6 +4,8 @@ import time
 import hashlib
 from inspect import isclass
 
+from git import Repo as GitRepo
+
 from sqlalchemy.inspection import inspect as sqlalchemyinspect
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -32,19 +34,53 @@ class MigrateVersion(Base):
     repository_path = Column(Text, doc=u"""field repository_path""", info=CustomField | SortableField)
     version = Column(Integer, doc=u"""field version""", info=CustomField | SortableField)
 
+class Actor(Base):
+    u"""table kit_actor"""
+    __tablename__ = 'kit_actor'
+    actor_id = Column(Integer, primary_key=True, doc=u"""对应 actor_id""", info=SortableField | InitializeField)
+    actor_name = Column(String(64), doc=u"""field actor_name""", info=CustomField | SortableField)
+    actor_email = Column(String(64), doc=u"""field actor_email""", info=CustomField | SortableField)
+
+class Commit(Base):
+    u"""table kit_commit"""
+    __tablename__ = 'kit_commit'
+    commit_id = Column(Integer, primary_key=True, doc=u"""对应 commit_id""", info=SortableField | InitializeField)
+    commit_hash = Column(String(40), doc=u"""field commit_hash""", info=CustomField | SortableField)
+    commit_message = Column(String(191), doc=u"""field repo_path""", info=CustomField | SortableField)
+    committed_date = Column(Integer, doc=u"""field repo_path""", info=CustomField | SortableField)
+
 class Ref(Base):
     u"""table kit_ref"""
     __tablename__ = 'kit_ref'
     ref_id = Column(Integer, primary_key=True, doc=u"""对应 repo_id""", info=SortableField | InitializeField)
-    ref_path = Column(String(191), primary_key=True, doc=u"""field repo_path""", info=CustomField | SortableField)
-    ref_name = Column(String(191), primary_key=True, doc=u"""field repo_path""", info=CustomField | SortableField)
+    ref_path = Column(String(191), doc=u"""field repo_path""", info=CustomField | SortableField)
+    ref_name = Column(String(191), doc=u"""field repo_path""", info=CustomField | SortableField)
+
+    @classmethod
+    def info(cls):
+        class Ref(SQLAlchemyObjectType):
+            class Meta:
+                model = cls
+
+            commit = Field(lambda :Commit, description=u'对应 commit')
+            def resolve_commit(self, args, context, info):
+                commit = context._commit = context._ref.commit
+                return Commit(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date)
+
+            commits = List(lambda :Commit, description=u'往前推算 commits')
+            def resolve_commits(self, args, context, info):
+                repo = context._repo
+                ref = context._ref
+                return [Commit(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date) for commit in repo.iter_commits(ref.name, max_count=50)]
+
+        return Ref
 
 class Repo(Base):
     u"""table kit_repo"""
     __tablename__ = 'kit_repo'
 
     repo_id = Column(Integer, primary_key=True, doc=u"""对应 repo_id""", info=SortableField | InitializeField)
-    repo_path = Column(String(191), primary_key=True, doc=u"""field repo_path""", info=CustomField | SortableField)
+    repo_path = Column(String(191), doc=u"""field repo_path""", info=CustomField | SortableField)
 
     @classmethod
     def info(cls):
@@ -57,7 +93,7 @@ class Repo(Base):
             )
             def resolve_head(self, args, context, info):
                 name = args.get('name', 'master')
-                ref = context._repo.heads[name]
+                ref = context._ref = context._repo.heads[name]
                 return Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path)
 
             heads = List(lambda :Ref, description=u'引用')
@@ -74,7 +110,7 @@ class Repo(Base):
             )
             def resolve_tag(self, args, context, info):
                 name = args.get('name', 'master')
-                ref = context._repo.tags[name]
+                ref = context._ref = context._repo.tags[name]
                 return Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path)
 
             tags = List(lambda :Ref, description=u'tag')
@@ -82,11 +118,6 @@ class Repo(Base):
                 return [Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path) for ref in context._repo.tags]
 
         return Repo
-
-def date(format_='%Y-%m-%d %H:%M:%S', time_=None):
-    timestamp = time.time() if time_ is None else int(time_)
-    timestruct = time.localtime(timestamp)
-    return time.strftime(format_, timestruct)
 
 ##############################################################
 ###################		根查询 Query		######################
@@ -103,18 +134,14 @@ class Query(g.ObjectType):
     )
     def resolve_repo(self, args, context, info):
         repo_path = args.get('repo_path', '')
-        context._repo = None
+        repo = context._repo = GitRepo(repo_path)
         return Repo.query.filter_by(repo_path = repo_path).first()
 
     curRepo = Field(Repo, description=u'this repo')
     def resolve_curRepo(self, args, context, info):
-        repo = app.config.get('REPO')
+        repo = context._repo = app.config.get('REPO')
         if repo:
-            context._repo = repo
-            return Repo(
-                repo_id=0,
-                repo_path=repo.working_dir
-            )
+            return Repo(repo_id=0, repo_path=repo.working_dir)
 
     def resolve_hello(self, args, context, info):
         return 'Hello, %s!' % (args.get('name', ''), )
