@@ -36,6 +36,8 @@ def read_file(base, obj, seq="\n"):
         else:
             return seq.join([first_line] + rf.readlines()).strip()
 
+def load_blob(base, h):
+    return load_hash(base, h).split('\x00', 1)[-1]
 
 def load_hash(base, h):
     h_file = os.path.join(base, 'objects', h[:2], h[2:])

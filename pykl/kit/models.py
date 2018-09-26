@@ -48,6 +48,7 @@ class Blob(Base):
     blob_path = Column(String(64), doc=u"""field blob_path""", info=CustomField | SortableField)
     blob_hash = Column(String(40), doc=u"""field blob_hash""", info=CustomField | SortableField)
     blob_mode = Column(Integer, doc=u"""field blob_mode""", info=CustomField | SortableField)
+    blob_size = Column(Integer, doc=u"""field blob_size""", info=CustomField | SortableField)
 
 class Tree(Base):
     u"""table kit_tree"""
@@ -56,6 +57,7 @@ class Tree(Base):
     tree_path = Column(String(64), doc=u"""field tree_path""", info=CustomField | SortableField)
     tree_hash = Column(String(40), doc=u"""field tree_hash""", info=CustomField | SortableField)
     tree_mode = Column(Integer, doc=u"""field tree_mode""", info=CustomField | SortableField)
+    tree_size = Column(Integer, doc=u"""field tree_size""", info=CustomField | SortableField)
 
     @classmethod
     def info(cls):
@@ -65,13 +67,25 @@ class Tree(Base):
 
             trees = List(lambda :cls, description=u'trees')
             def resolve_trees(self, args, context, info):
-                return [cls(tree_id=0, tree_path=tree.path, tree_hash=tree.hexsha, tree_mode=tree.mode) \
-                            for tree in context._tree.trees]
+                return [_Tree(tree) for tree in self._tree.trees]
 
             blobs = List(lambda :Blob, description=u'blobs')
             def resolve_blobs(self, args, context, info):
-                return [Blob(blob_id=0, blob_path=blob.path, blob_hash=blob.hexsha, blob_mode=blob.mode) \
-                            for blob in context._tree.blobs]
+                return [_Blob(blob) for blob in self._tree.blobs]
+
+            blobfile = Field(lambda :Blob, description=u'对应 blob',
+                path=g.Argument(g.String, default_value="", description=u'input you file name')
+            )
+            def resolve_blobfile(self, args, context, info):
+                path = args.get('path', '')
+                return search_blobfile(self._tree, path)
+
+            treedir = Field(lambda :Tree, description=u'对应 blob',
+                path=g.Argument(g.String, default_value="", description=u'input you file name')
+            )
+            def resolve_treedir(self, args, context, info):
+                path = args.get('path', '')
+                return search_treedir(self._tree, path)
 
         return Tree
 
@@ -91,24 +105,36 @@ class Commit(Base):
 
             author = Field(lambda :Actor, description=u'对应 author')
             def resolve_author(self, args, context, info):
-                author = context._author = context._commit.author
-                return Actor(actor_id=0, actor_name=author.name, actor_email=author.email)
+                author = self._commit.author
+                return _Actor(author)
 
             committer = Field(lambda :Actor, description=u'对应 committer')
             def resolve_committer(self, args, context, info):
-                committer = context._committer = context._commit.committer
-                return Actor(actor_id=0, actor_name=committer.name, actor_email=committer.email)
-
+                committer = self._commit.committer
+                return _Actor(committer)
 
             parents = List(lambda :cls, description=u'parents commits')
             def resolve_parents(self, args, context, info):
-                return [cls(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date) \
-                            for commit in context._commit.parents]
+                return [_Commit(commit) for commit in self._commit.parents]
 
             tree = Field(lambda :Tree, description=u'对应 tree')
             def resolve_tree(self, args, context, info):
-                tree = context._tree = context._commit.tree
-                return Tree(tree_id=0, tree_path=tree.path, tree_hash=tree.hexsha, tree_mode=tree.mode)
+                tree = self._commit.tree
+                return _Tree(tree)
+
+            blobfile = Field(lambda :Blob, description=u'对应 blob',
+                path=g.Argument(g.String, default_value="", description=u'input you file name')
+            )
+            def resolve_blobfile(self, args, context, info):
+                path = args.get('path', '')
+                return search_blobfile(self._commit.tree, path)
+
+            treedir = Field(lambda :Tree, description=u'对应 blob',
+                path=g.Argument(g.String, default_value="", description=u'input you file name')
+            )
+            def resolve_treedir(self, args, context, info):
+                path = args.get('path', '')
+                return search_treedir(self._commit.tree, path)
 
         return Commit
 
@@ -127,16 +153,31 @@ class Ref(Base):
 
             commit = Field(lambda :Commit, description=u'对应 commit')
             def resolve_commit(self, args, context, info):
-                commit = context._commit = context._ref.commit
-                return Commit(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date)
+                commit = self._ref.commit
+                return _Commit(commit)
+
+            blobfile = Field(lambda :Blob, description=u'对应 blob',
+                path=g.Argument(g.String, default_value="", description=u'input you file name')
+            )
+            def resolve_blobfile(self, args, context, info):
+                path = args.get('path', '')
+                return search_blobfile(self._ref.commit.tree, path)
+
+            treedir = Field(lambda :Tree, description=u'对应 blob',
+                path=g.Argument(g.String, default_value="", description=u'input you file name')
+            )
+            def resolve_treedir(self, args, context, info):
+                path = args.get('path', '')
+                return search_treedir(self._ref.commit.tree, path)
 
             commits = List(lambda :Commit, description=u'往前推算 commits',
                 max_count=g.Argument(g.Int, description=u'input max_count')
             )
             def resolve_commits(self, args, context, info):
                 max_count = args.get('max_count', 10)
-                return [Commit(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date) \
-                         for commit in context._repo.iter_commits(context._ref.name, max_count=max_count)]
+                if max_count <= 0:
+                    return []
+                return [_Commit(commit) for commit in self._ref.repo.iter_commits(self._ref.name, max_count=max_count)]
 
         return Ref
 
@@ -157,32 +198,94 @@ class Repo(Base):
                 name=g.Argument(g.String, default_value="master", description=u'input you name')
             )
             def resolve_head(self, args, context, info):
-                name = args.get('name', 'master')
-                ref = context._ref = context._repo.heads[name]
-                return Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path)
+                name = args.get('name', '')
+                if not name:
+                    return None
+                ref = self._repo.heads[name]
+                return _Ref(ref)
 
             heads = List(lambda :Ref, description=u'引用')
             def resolve_heads(self, args, context, info):
-                return [Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path) for ref in context._repo.heads]
+                return [_Ref(ref) for ref in self._repo.heads]
 
             master = Field(lambda :Ref, description=u'master 引用')
             def resolve_master(self, args, context, info):
-                args['name'] = 'master'
-                return self.info.resolve_head(Repo(self), args, context, info)
+                ref = self._repo.heads.master
+                return _Ref(ref)
 
             tag = Field(lambda :Ref, description=u'查找 tag',
                 name=g.Argument(g.String, description=u'input you tag')
             )
             def resolve_tag(self, args, context, info):
-                name = args.get('name', 'master')
-                ref = context._ref = context._repo.tags[name]
-                return Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path)
+                name = args.get('name', '')
+                if not name:
+                    return None
+                ref = self._repo.tags[name]
+                return _Ref(ref)
 
             tags = List(lambda :Ref, description=u'tag')
             def resolve_tags(self, args, context, info):
-                return [Ref(ref_id=0, ref_name=ref.name, ref_path=ref.path) for ref in context._repo.tags]
+                return [_Ref(ref) for ref in self._repo.tags]
 
         return Repo
+
+def search_blobfile(_tree, path):
+    if not path:
+        return None
+
+    def _resolve_blobfile(blobs, trees):
+        for blob in blobs:
+            if path == blob.path:
+                return _Blob(blob)
+        for tree in trees:
+            ret = _resolve_blobfile(tree.blobs, tree.trees) if path.startswith(tree.path) else None
+            if ret:
+                return ret
+    return _resolve_blobfile(_tree.blobs, _tree.trees)
+
+def search_treedir(_tree, path):
+    if not path:
+        return None
+
+    def _resolve_treedir(trees):
+        for tree in trees:
+            if path == tree.path:
+                return _Tree(tree)
+        for tree in trees:
+            ret = _resolve_treedir(tree.trees) if path.startswith(tree.path) else None
+            if ret:
+                return ret
+    return _resolve_treedir(_tree.trees)
+
+def _Actor(actor, actor_id=0):
+    obj = Actor(actor_id=actor_id, actor_name=actor.name, actor_email=actor.email)
+    obj._actor = actor
+    return obj
+
+def _Blob(blob, blob_id=0):
+    obj = Blob(blob_id=0, blob_path=blob.path, blob_hash=blob.hexsha, blob_mode=blob.mode, blob_size=blob.size)
+    obj._blob = blob
+    return obj
+
+def _Tree(tree, tree_id=0):
+    obj = Tree(tree_id=tree_id, tree_path=tree.path, tree_hash=tree.hexsha, tree_mode=tree.mode, tree_size=tree.size)
+    obj._tree = tree
+    return obj
+
+def _Commit(commit, commit_id=0):
+    obj = Commit(commit_id=commit_id, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date)
+    obj._commit = commit
+    return obj
+
+def _Ref(ref, ref_id=0):
+    obj = Ref(ref_id=ref_id, ref_name=ref.name, ref_path=ref.path)
+    obj._ref = ref
+    return obj
+
+def _Repo(repo, repo_id=0):
+    obj = Repo(repo_id=repo_id, repo_path=repo.working_dir)
+    obj._repo = repo
+    return obj
 
 ##############################################################
 ###################		根查询 Query		######################
@@ -199,14 +302,13 @@ class Query(g.ObjectType):
     )
     def resolve_repo(self, args, context, info):
         repo_path = args.get('repo_path', '')
-        repo = context._repo = GitRepo(repo_path)
-        return Repo.query.filter_by(repo_path = repo_path).first()
+        repo = GitRepo(repo_path)
+        return _Repo(repo)
 
     curRepo = Field(Repo, description=u'this repo')
     def resolve_curRepo(self, args, context, info):
-        repo = context._repo = app.config.get('REPO')
-        if repo:
-            return Repo(repo_id=0, repo_path=repo.working_dir)
+        repo = app.config.get('REPO')
+        return _Repo(repo)
 
     def resolve_hello(self, args, context, info):
         return 'Hello, %s!' % (args.get('name', ''), )
