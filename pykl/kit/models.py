@@ -41,6 +41,40 @@ class Actor(Base):
     actor_name = Column(String(64), doc=u"""field actor_name""", info=CustomField | SortableField)
     actor_email = Column(String(64), doc=u"""field actor_email""", info=CustomField | SortableField)
 
+class Blob(Base):
+    u"""table kit_blob"""
+    __tablename__ = 'kit_blob'
+    blob_id = Column(Integer, primary_key=True, doc=u"""对应 blob_id""", info=SortableField | InitializeField)
+    blob_path = Column(String(64), doc=u"""field blob_path""", info=CustomField | SortableField)
+    blob_hash = Column(String(40), doc=u"""field blob_hash""", info=CustomField | SortableField)
+    blob_mode = Column(Integer, doc=u"""field blob_mode""", info=CustomField | SortableField)
+
+class Tree(Base):
+    u"""table kit_tree"""
+    __tablename__ = 'kit_tree'
+    tree_id = Column(Integer, primary_key=True, doc=u"""对应 tree_id""", info=SortableField | InitializeField)
+    tree_path = Column(String(64), doc=u"""field tree_path""", info=CustomField | SortableField)
+    tree_hash = Column(String(40), doc=u"""field tree_hash""", info=CustomField | SortableField)
+    tree_mode = Column(Integer, doc=u"""field tree_mode""", info=CustomField | SortableField)
+
+    @classmethod
+    def info(cls):
+        class Tree(SQLAlchemyObjectType):
+            class Meta:
+                model = cls
+
+            trees = List(lambda :cls, description=u'trees')
+            def resolve_trees(self, args, context, info):
+                return [cls(tree_id=0, tree_path=tree.path, tree_hash=tree.hexsha, tree_mode=tree.mode) \
+                            for tree in context._tree.trees]
+
+            blobs = List(lambda :Blob, description=u'blobs')
+            def resolve_blobs(self, args, context, info):
+                return [Blob(blob_id=0, blob_path=blob.path, blob_hash=blob.hexsha, blob_mode=blob.mode) \
+                            for blob in context._tree.blobs]
+
+        return Tree
+
 class Commit(Base):
     u"""table kit_commit"""
     __tablename__ = 'kit_commit'
@@ -48,6 +82,35 @@ class Commit(Base):
     commit_hash = Column(String(40), doc=u"""field commit_hash""", info=CustomField | SortableField)
     commit_message = Column(String(191), doc=u"""field repo_path""", info=CustomField | SortableField)
     committed_date = Column(Integer, doc=u"""field repo_path""", info=CustomField | SortableField)
+
+    @classmethod
+    def info(cls):
+        class Commit(SQLAlchemyObjectType):
+            class Meta:
+                model = cls
+
+            author = Field(lambda :Actor, description=u'对应 author')
+            def resolve_author(self, args, context, info):
+                author = context._author = context._commit.author
+                return Actor(actor_id=0, actor_name=author.name, actor_email=author.email)
+
+            committer = Field(lambda :Actor, description=u'对应 committer')
+            def resolve_committer(self, args, context, info):
+                committer = context._committer = context._commit.committer
+                return Actor(actor_id=0, actor_name=committer.name, actor_email=committer.email)
+
+
+            parents = List(lambda :cls, description=u'parents commits')
+            def resolve_parents(self, args, context, info):
+                return [cls(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date) \
+                            for commit in context._commit.parents]
+
+            tree = Field(lambda :Tree, description=u'对应 tree')
+            def resolve_tree(self, args, context, info):
+                tree = context._tree = context._commit.tree
+                return Tree(tree_id=0, tree_path=tree.path, tree_hash=tree.hexsha, tree_mode=tree.mode)
+
+        return Commit
 
 class Ref(Base):
     u"""table kit_ref"""
@@ -67,11 +130,13 @@ class Ref(Base):
                 commit = context._commit = context._ref.commit
                 return Commit(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date)
 
-            commits = List(lambda :Commit, description=u'往前推算 commits')
+            commits = List(lambda :Commit, description=u'往前推算 commits',
+                max_count=g.Argument(g.Int, description=u'input max_count')
+            )
             def resolve_commits(self, args, context, info):
-                repo = context._repo
-                ref = context._ref
-                return [Commit(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date) for commit in repo.iter_commits(ref.name, max_count=50)]
+                max_count = args.get('max_count', 10)
+                return [Commit(commit_id=0, commit_hash=commit.hexsha, commit_message=commit.message, committed_date=commit.committed_date) \
+                         for commit in context._repo.iter_commits(context._ref.name, max_count=max_count)]
 
         return Ref
 

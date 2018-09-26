@@ -21,6 +21,7 @@ db = SQLAlchemy(app)
 import models
 
 # from git import Repo; repo_path = r"D:\GitHub\pykl"; repo = Repo(repo_path); repo
+# import os; base = os.path.join(repo_path, '.git'); master = repo.heads.master; co = master.commit; tr = co.tree
 
 def read_file(base, obj, seq="\n"):
     obj_file = os.path.join(base, obj)
@@ -53,6 +54,7 @@ def get_test_app(git_path):
     app.config.setdefault('REPO_PATH', repo_path)
     app.config.setdefault('REPO', Repo(repo_path))
 
+    app.add_url_rule('/graphql', view_func=GraphQLView.as_view('graphql', schema=models.schema, graphiql=True))
     return app
 
 @app.route('/')
@@ -65,8 +67,6 @@ def test():
     repo = app.config.get('REPO')
 
     return help(repo)
-
-app.add_url_rule('/graphql', view_func=GraphQLView.as_view('graphql', schema=models.schema, graphiql=True))
 
 
 def main():
@@ -88,7 +88,6 @@ def main():
         webbrowser.open('http://localhost:5000/')
 
         app.run()
-
 
 GRAPHIQL_HTML = '''
 <!DOCTYPE html>
