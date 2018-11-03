@@ -64,11 +64,18 @@ class BuildAliApi(BaseBuild):
     def __init__(self, config, options={}):
         self.config, self.options = config, Options(options)
 
+tansMap = {
+    'x-oss-acl': 'xOssAcl',
+    'encoding-type': 'encodingType',
+    'max-keys': 'maxKeys',
+}
 
 def api_args(fname, params, typeMap={'String':'string', 'Integer': 'int', 'Boolean': 'bool', 'RepeaList': 'array'}):
     args = []
     for key, val in params.items():
         name = (key[0].lower() + key[1:]).replace('.', '')
+        name = tansMap[name] if name in tansMap else name
+
         val.update({
             'key': key.replace('.', ''),
             'name': name,
@@ -106,6 +113,7 @@ def api_args(fname, params, typeMap={'String':'string', 'Integer': 'int', 'Boole
 def build_api_args(fname, params):
 
     def _build_args(fname, name, required, _type):
+
         if name == 'pageNum' or name == 'pageNumber':
             return '$' + name + ' = 1'
         if name == 'pageSize':

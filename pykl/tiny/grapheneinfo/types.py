@@ -203,6 +203,7 @@ def BuildType(cls, get_info = True, base_type=SQLAlchemyObjectType, **ext_fields
         cls.info = cls.info()
         return cls.info
     elif _is_graphql(info):
+        cls.info = info
         return info
     elif _is_graphql(cls):
         return cls

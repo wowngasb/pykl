@@ -172,20 +172,8 @@ def encodeByXor(string, cryptkey):
 def main():
     import json
     test = json.loads('''
-{
-  "key": "zT5hF$E24*(#dfS^Yq3&6A^6",
-  "test_list": {
-    "CDveD0kGQkX6c": "",
-    "m1lFv6XGYEAe9z": "1",
-    "lJT_J__LJePfudOg": "12",
-    "dzWJrtwrqORxqOUJ4": "123",
-    "7r8Kqp3Fs3k5Dk3ZSp": "1234",
-    "q58an2EvsFuIuSevy2": "1234",
-    "qQDKgHWSuJFg-OCx-g": "1234",
-    "coJbrAR2BcNFy8IWkA": "1234",
-    "ewVITfifalugspmnN6": "1234"
-  }
-}
+{"key":"zT5hF$E24*(#dfS^Yq3&6A^6","test_list":{"CDveD0kGQkX6c":"","m1lFv6XGYEAe9z":"1","lJT_J__LJePfudOg":"12","dzWJrtwrqORxqOUJ4":"123","7r8Kqp3Fs3k5Dk3ZSp":"1234","q58an2EvsFuIuSevy2":"1234","qQDKgHWSuJFg-OCx-g":"1234","coJbrAR2BcNFy8IWkA":"1234","ewVITfifalugspmnN6":"1234"}}
+
 ''')
     key = '18fss45gre65q2%$@65e3276482'
     str_i = '123456'
