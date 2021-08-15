@@ -1,6 +1,4 @@
 #-*- coding: utf-8 -*-
-from gevent import monkey
-monkey.patch_all()
 from gevent.pool import Pool
 import urllib2
 import httplib

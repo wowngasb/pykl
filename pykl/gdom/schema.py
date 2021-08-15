@@ -1,6 +1,6 @@
 # coding: utf-8
 import graphene
-
+import os
 from gpage import Document, Element, Node, get_page
 from gredis import RedisData, RedisInfo, RedisDbInfo, get_redis
 
@@ -14,7 +14,7 @@ class _HookProxy(object):
 
     def set_get_redis(self, _get_redis):
         self._get_redis = _get_redis
-        
+
     def get_page(self, url):
         return self._get_page(url) if self._get_page else get_page(url)
 
@@ -41,6 +41,11 @@ class Query(graphene.ObjectType):
         url = args.get('url')
         source = args.get('source')
         assert url or source, 'At least you have to provide url or source of the page'
+        if url.startswith('cache') and url.endswith('.cache'):
+            with open(os.path.join(r'D:\GitHub\mqttHub\database', 'data_fetch', url), 'r') as rf:
+                source = rf.read().decode('utf-8')
+                url = ''
+
         return HookProxy.get_page(url or source)
 
     def resolve_redis(self, args, context, info):

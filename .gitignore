@@ -105,3 +105,4 @@ upload_pypi.bat
 
 *.test.html
 *.test.json
+.idea/
