@@ -2,41 +2,40 @@ import argparse
 import json
 import sys
 
-import flask_graphql
-from flask import Flask, Blueprint, url_for
+from flask import Flask, url_for
 from flask_graphql import GraphQLView
 
 from schema import schema
 
 SAMPLE_PAGE_QUERY_MAP = {
-    'Hacker News Parser example': '''{
+    'Hacker News Parser example': '''
+{
   page(url: "http://news.ycombinator.com") {
     items: query(selector: "tr.athing") {
       rank: text(selector: "td span.rank")
       title: text(selector: "td.title a")
       sitebit: text(selector: "span.comhead a")
-      url: attr(selector: "td.title a", name: "href")
+      url: attr(selector: "td.title a", key: "href")
       attrs: next {
         score: text(selector: "span.score")
         user: text(selector: "a:eq(0)")
-        comments: text(selector: "a:eq(2)")
+        comments: text(selector: "a:eq(3)")
       }
     }
   }
-}''',
-    'github pykl': '''{
+}
+''',
+    'github pykl': '''
+{
   page(url: "https://github.com/wowngasb/pykl/") {
     items: query(selector: "div .Box-row", filter: "lambda el: len(el.children('div'))==4 ") {
       file: call(selector: "div", func: "lambda el: el[1].text()")
       ext: call(selector: "div", func: "lambda el: el[1].text().split('.')[-1] if el[1].text().find('.')>-1 else '' ")
       commit_text: call(selector: "div", func: "lambda el: el[2].text()")
-      commit_id: call(selector: "div", func: "lambda el: el[2].find('a').attr('href').split('/')[-1] ")
-      update_at: call(selector: "div", func: "lambda el: el[3].find('time-ago').attr('datetime') ")
     }
   }
 }
 ''',
-
 
 }
 
@@ -99,19 +98,22 @@ SAMPLE_REDIS_QUERY_MAP = {
 
 
 def index_view():
-    _str_p_a = lambda n, q: '<p><a href="{url}">{text}</a></p>'.format(text=n, url=url_for('graphql', query=q.strip()))
+    fix_s = lambda s: s.replace('+', ' ')
+    _str_p_a = lambda n, q: '<p><a href="{url}">{text}</a></p>'.format(text=n, url=fix_s( \
+        url_for('graphiql', query=q.strip())))
     _list_p_a = lambda d: [_str_p_a(n, q) for n, q in d.items()]
     return ''.join(
         ['<h2>Page:</h2>'] + _list_p_a(SAMPLE_PAGE_QUERY_MAP) +
         ['<h2>Redis:</h2>'] + _list_p_a(SAMPLE_REDIS_QUERY_MAP)
     )
 
+
 def get_test_app():
     app = Flask(__name__)
     app.debug = True
 
     app.add_url_rule('/graphql', 'graphql', view_func=GraphQLView.as_view('graphql', schema=schema, graphiql=True))
-    app.add_url_rule('/', 'index', view_func=index_view,)
+    app.add_url_rule('/', 'index', view_func=index_view, )
     return app
 
 
@@ -127,7 +129,8 @@ def main():
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('query', type=argparse.FileType('r'), nargs='?', help='The query file', default=None)
-    group.add_argument('--test', action='store_true', default=False, help='This will start a test server with a UI for querying')
+    group.add_argument('--test', action='store_true', default=False,
+                       help='This will start a test server with a UI for querying')
 
     parser.add_argument('page', metavar='PAGE', nargs='?', const=1, type=str, help='The pages to parse')
 
@@ -153,6 +156,7 @@ def main():
         outdata = json.dumps(data, indent=4, separators=(',', ': '))
         args.output.write(outdata)
         args.output.write('\n')
+
 
 if __name__ == '__main__':
     main()

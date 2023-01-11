@@ -4,11 +4,86 @@ from pyquery import PyQuery as pq
 from collections import OrderedDict
 import random
 
+
 def _query_selector(pq, args):
     selector = args.get('selector')
     if not selector:
         return pq
     return pq.find(selector)
+
+
+REPLACE_CACHE = {}
+
+
+def build_replaces(replaces):
+    if replaces in REPLACE_CACHE:
+        return REPLACE_CACHE[replaces]
+
+    arr = [r.split('|') for r in replaces.split(';') if '|' in r]
+    arr = [a for a in arr if len(a) == 2]
+    if not arr:
+        return lambda s: s
+
+    def rep2(s):
+        for aa in arr:
+            if aa[0] == '' and aa[1] == ' ':
+                s = s.replace('\r', ' ')
+                s = s.replace('\n', ' ')
+                s = s.replace('\t', ' ')
+                s = s.replace(u'\xa0', ' ')
+                while '  ' in s:
+                    s = s.replace('  ', ' ')
+            elif aa[0] == '' and aa[1] == '':
+                s = s.replace('\r', ' ')
+                s = s.replace('\n', ' ')
+                s = s.replace('\t', ' ')
+                s = s.replace(u'\xa0', ' ')
+                s = s.replace(' ', '')
+            elif aa[0] == ':' and aa[1] == ':':
+                s = s.replace(u'： ', aa[1])
+                s = s.replace(u'：', aa[1])
+            elif aa[0] == ',' and aa[1] == ',':
+                s = s.replace(u'， ', aa[1])
+                s = s.replace(u'，', aa[1])
+            elif aa[0] == '.' and aa[1] == '.':
+                s = s.replace(u'。 ', aa[1])
+                s = s.replace(u'。', aa[1])
+            else:
+                s = s.replace(aa[0], aa[1])
+        return s
+
+    REPLACE_CACHE[replaces] = rep2
+    return rep2
+
+
+FUNC_CACHE = {}
+for _i in range(100):
+    FUNC_CACHE[str(_i)] = lambda els, idx=_i: els[idx].text() if len(els) > idx else ''
+
+FUNC_CACHE[''] = FUNC_CACHE['0']
+
+
+def _resolve_call(obj, args, context, info):
+    replaces = args.get('replaces', '')
+    rf = build_replaces(replaces) if replaces else None
+
+    fstr = args.get('func', '')
+    if fstr in FUNC_CACHE:
+        func = FUNC_CACHE[fstr]
+    else:
+        func = eval(fstr)
+        FUNC_CACHE[fstr] = func
+
+    selector = args.get('selector')
+    c_key = '__call_' + selector
+    if hasattr(obj, c_key):
+        el = getattr(obj, c_key)
+    else:
+        el = [i for i in _query_selector(obj, args).items()]
+        setattr(obj, c_key, el)
+
+    text = func(el) if el else ''
+    return rf(text) if rf else text
 
 
 class Node(graphene.Interface):
@@ -18,16 +93,25 @@ class Node(graphene.Interface):
     html = graphene.String(description='The html representation of the selected DOM',
                            selector=graphene.String())
     text = graphene.String(description='The text for the selected DOM',
-                           selector=graphene.String())
+                           selector=graphene.String(), replaces=graphene.String())
+
+    texts = graphene.List(graphene.String, description='The text for the selected DOM',
+                          selector=graphene.String(), replaces=graphene.String())
 
     call = graphene.String(description='The lambda result for the selected DOM',
-                           selector=graphene.String(), func=graphene.String())
+                           selector=graphene.String(), replaces=graphene.String(), func=graphene.String())
+
+    i_call = graphene.Int(description='The lambda result for the selected DOM',
+                          selector=graphene.String(), replaces=graphene.String(), func=graphene.String())
+
+    f_call = graphene.Float(description='The lambda result for the selected DOM',
+                            selector=graphene.String(), replaces=graphene.String(), func=graphene.String())
 
     tag = graphene.String(description='The tag for the selected DOM',
                           selector=graphene.String())
     attr = graphene.String(description='The DOM attr of the Node',
                            selector=graphene.String(),
-                           _name=graphene.String(name='name', required=True))
+                           key=graphene.String(required=True))
     _is = graphene.Boolean(description='Returns True if the DOM matches the selector',
                            name='is', selector=graphene.String(required=True))
     query = graphene.List(lambda: Element,
@@ -65,12 +149,27 @@ class Node(graphene.Interface):
         return _query_selector(self, args).outerHtml()
 
     def resolve_text(self, args, context, info):
-        return _query_selector(self, args).eq(0).remove('script').text()
+        replaces = args.get('replaces', '')
+        rf = build_replaces(replaces) if replaces else None
+        text = _query_selector(self, args).eq(0).remove('script').text()
+        return rf(text) if rf else text
+
+    def resolve_texts(self, args, context, info):
+        replaces = args.get('replaces', '')
+        rf = build_replaces(replaces) if replaces else None
+        els = [i for i in _query_selector(self, args).items()]
+        return [rf(el.text()) for el in els] if rf else [el.text() for el in els]
 
     def resolve_call(self, args, context, info):
-        func = eval(args.get('func'))
-        el = [i for i in _query_selector(self, args).items()]
-        return func(el)
+        return _resolve_call(self, args, context, info)
+
+    def resolve_f_call(self, args, context, info):
+        ret = _resolve_call(self, args, context, info)
+        return float(ret) if ret else 0.0
+
+    def resolve_i_call(self, args, context, info):
+        ret = _resolve_call(self, args, context, info)
+        return int(ret) if ret else 0
 
     def resolve_tag(self, args, context, info):
         el = _query_selector(self, args).eq(0)
@@ -81,14 +180,14 @@ class Node(graphene.Interface):
         return self.is_(args.get('selector'))
 
     def resolve_attr(self, args, context, info):
-        attr = args.get('name')
+        attr = args.get('key')
         return _query_selector(self, args).attr(attr)
 
     def resolve_query(self, args, context, info):
         filter = eval(args.get('filter', '')) if args.get('filter', '') else None
         return [i for i in _query_selector(self, args).items() if filter(i)] \
-                    if filter else \
-                        _query_selector(self, args).items()
+            if filter else \
+            _query_selector(self, args).items()
 
     def resolve_children(self, args, context, info):
         selector = args.get('selector')
@@ -128,7 +227,6 @@ class Node(graphene.Interface):
         return self.prevAll(selector).items()
 
 
-
 def get_page(page):
     return pq(page)
 
@@ -138,8 +236,9 @@ class Document(graphene.ObjectType):
     The Document Type represent any web page loaded and
     serves as an entry point into the page content
     '''
+
     class Meta:
-        interfaces = (Node, )
+        interfaces = (Node,)
 
     title = graphene.String(description='The title of the document')
 
@@ -155,8 +254,9 @@ class Element(graphene.ObjectType):
     '''
     A Element Type represents an object in a Document
     '''
+
     class Meta:
-        interfaces = (Node, )
+        interfaces = (Node,)
 
     visit = graphene.Field(Document,
                            description='Visit will visit the href of the link and return the corresponding document')
