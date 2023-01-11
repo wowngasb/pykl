@@ -16,7 +16,7 @@ setup(name='pykl',
 		'flask-graphql>=1.2.0',
 		'pyquery==1.2.11',
 		'requests==2.9.1',
-		'SQLAlchemy==1.1.15',
+		'SQLAlchemy==1.3.0',
 		'six',
 		'singledispatch'
       ],
