@@ -41,8 +41,8 @@ class Query(graphene.ObjectType):
         url = args.get('url')
         source = args.get('source')
         assert url or source, 'At least you have to provide url or source of the page'
-        if url.startswith('cache') and url.endswith('.cache'):
-            with open(os.path.join(r'D:\GitHub\mqttHub\database', 'data_fetch', url), 'r') as rf:
+        if url.startswith('GitHub') and (url.endswith('.cache') or url.endswith('.html')):
+            with open(os.path.join('D:\\', url), 'r') as rf:
                 source = rf.read().decode('utf-8')
                 url = ''
 
