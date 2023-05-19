@@ -15,6 +15,16 @@ def _query_selector(pq, args):
 REPLACE_CACHE = {}
 
 
+def _rep_find(s, fmt, last, seq):
+    arr = [p for p in s.split(seq) if p]
+    arr = arr[::-1] if last else arr
+    for a in arr:
+        if fmt == 'd' and a.isdigit():
+            return a
+
+    return ''
+
+
 def build_replaces(replaces):
     if replaces in REPLACE_CACHE:
         return REPLACE_CACHE[replaces]
@@ -26,30 +36,35 @@ def build_replaces(replaces):
 
     def rep2(s):
         for aa in arr:
-            if aa[0] == '' and aa[1] == ' ':
+            p1, p2 = aa[0], aa[1]
+            pchar, seq = (p1[0], p1[1:]) if p1 else ('', '')
+            if pchar == '$' or pchar == '^':
+                return _rep_find(s, p2, pchar == '$', seq if seq else '/')
+
+            if p1 == '' and p2 == ' ':
                 s = s.replace('\r', ' ')
                 s = s.replace('\n', ' ')
                 s = s.replace('\t', ' ')
                 s = s.replace(u'\xa0', ' ')
                 while '  ' in s:
                     s = s.replace('  ', ' ')
-            elif aa[0] == '' and aa[1] == '':
+            elif p1 == '' and p2 == '':
                 s = s.replace('\r', ' ')
                 s = s.replace('\n', ' ')
                 s = s.replace('\t', ' ')
                 s = s.replace(u'\xa0', ' ')
                 s = s.replace(' ', '')
-            elif aa[0] == ':' and aa[1] == ':':
-                s = s.replace(u'： ', aa[1])
-                s = s.replace(u'：', aa[1])
-            elif aa[0] == ',' and aa[1] == ',':
-                s = s.replace(u'， ', aa[1])
-                s = s.replace(u'，', aa[1])
-            elif aa[0] == '.' and aa[1] == '.':
-                s = s.replace(u'。 ', aa[1])
-                s = s.replace(u'。', aa[1])
+            elif p1 == ':' and p2 == ':':
+                s = s.replace(u'： ', p2)
+                s = s.replace(u'：', p2)
+            elif p1 == ',' and p2 == ',':
+                s = s.replace(u'， ', p2)
+                s = s.replace(u'，', p2)
+            elif p1 == '.' and p2 == '.':
+                s = s.replace(u'。 ', p2)
+                s = s.replace(u'。', p2)
             else:
-                s = s.replace(aa[0], aa[1])
+                s = s.replace(p1, p2)
         return s
 
     REPLACE_CACHE[replaces] = rep2
