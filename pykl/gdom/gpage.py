@@ -35,6 +35,9 @@ def build_replaces(replaces):
         return lambda s: s
 
     def rep2(s):
+        if s is None:
+            return s
+
         for aa in arr:
             p1, p2 = aa[0], aa[1]
             pchar, seq = (p1[0], p1[1:]) if p1 else ('', '')
