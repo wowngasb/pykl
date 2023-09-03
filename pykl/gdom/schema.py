@@ -42,12 +42,13 @@ class Query(graphene.ObjectType):
         source = args.get('source', '')
         source = source if source else args.get('_source', '')
         assert url or source, 'At least you have to provide url or source of the page'
-        if url.startswith('GitHub') and (url.endswith('.cache') or url.endswith('.html')):
-            fname = os.path.join('D:\\', url)
-            if os.path.isfile(fname) and len(source) < 1024:
+        if not source and not url.startswith('http') and (url.endswith('.cache') or url.endswith('.html')):
+            fname = os.path.join(os.getcwd(), url)
+            if os.path.isfile(fname):
                 with open(fname, 'r') as rf:
                     source = rf.read().decode('utf-8')
 
+        source = source if isinstance(source, unicode) else source.decode('utf-8')
         return HookProxy.get_page(source) if source else HookProxy.get_page(url)
 
     def resolve_redis(self, args, context, info):
